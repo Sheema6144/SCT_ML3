@@ -1,0 +1,53 @@
+import zipfile
+import os
+
+# Unzip the file (replace with your actual file name if different)
+with zipfile.ZipFile("cat-and-dog.zip", 'r') as zip_ref:
+    zip_ref.extractall("dataset")
+
+# Verify extraction
+print("Extracted files:", os.listdir("dataset"))
+# Install required packages (if needed)
+!pip install opencv-python-headless tqdm
+
+# Import libraries
+import os
+import cv2
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.svm import SVC
+from sklearn.metrics import classification_report, accuracy_score
+from tqdm import tqdm
+def load_images(folder):
+    images = []
+    labels = []
+    size = 64  # Resize all images to 64x64
+
+    for label, category in enumerate(["cats", "dogs"]):
+        path = os.path.join(folder, category)
+        for file in tqdm(os.listdir(path)):
+            img_path = os.path.join(path, file)
+            try:
+                img = cv2.imread(img_path)
+                img = cv2.resize(img, (size, size))
+                images.append(img.flatten())  # Flatten to 1D
+                labels.append(label)
+            except Exception as e:
+                pass  # Skip unreadable files
+
+    return np.array(images), np.array(labels)
+
+X, y = load_images("dataset/training_set")
+# Split data
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Train SVM
+svm = SVC(kernel='linear')  # You can try 'rbf', 'poly', etc.
+svm.fit(X_train, y_train)
+
+# Predict
+y_pred = svm.predict(X_test)
+
+# Evaluate
+print("Accuracy:", accuracy_score(y_test, y_pred))
+print(classification_report(y_test, y_pred, target_names=["Cat", "Dog"]))
